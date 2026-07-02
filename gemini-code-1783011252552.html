@@ -126,9 +126,9 @@
 
         // 🎬 ฟังก์ชันกดเริ่มเกม -> รับชื่อ -> ปิดหน้า Welcome
         function startGameFlow() {
-            let name = prompt("🏰 กรุณากรอกชื่อของคุณเพื่อลงทะเบียนผู้พิทักษ์หอคอย:", "ผู้กล้าฝึกหัด ม.ต้น");
+            let name = prompt("🏰 กรุณากรอกชื่อของคุณเพื่อลงทะเบียนผู้พิทักษ์หอคอย:", "ผู้กล้าฝึกหัด...");
             if (name == null || name.trim() === "") {
-                name = "ผู้กล้าฝึกหัด ม.ต้น";
+                name = "ผู้กล้าฝึกหัด...";
             }
             document.getElementById('player-name-display').innerText = name;
             
