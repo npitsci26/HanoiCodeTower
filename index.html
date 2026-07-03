@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Hanoi Code Tower - ม.ต้น เรียน Python ผ่านเกม (🔒 Sandbox)</title>
+    <!-- โหลด Brython สำหรับรัน Python บน Web Browser -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.10.5/brython.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.10.5/brython_stdlib.js"></script>
+    
+    <style>
+        body { 
+            -webkit-user-select: none; 
+            -ms-user-select: none; 
+            user-select: none; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #1e1e1e; 
+            color: #fff; 
+            display: flex; 
+            padding: 20px; 
+            margin: 0; 
+            box-sizing: border-box; 
+            height: 100vh; 
+            position: relative;
+        }
+
+        /* 🎬 สไตล์หน้าต่างเข้าเกม (Welcome Screen) */
+        #welcome-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(20, 20, 20, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: all 0.5s ease;
+        }
+        .welcome-card {
+            background: #252526;
+            padding: 40px;
+            border-radius: 12px;
+            border: 2px solid #0e639c;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .welcome-card h1 { color: #ffa502; margin-top: 0; font-size: 28px; }
+        .welcome-card p { font-size: 16px; line-height: 1.6; color: #dcdcdc; text-align: left; margin: 20px 0; }
+        .start-btn { background: #2ed573; color: #fff; font-size: 18px; padding: 15px 40px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.2s; margin-top: 10px; }
+        .start-btn:hover { background: #22b85d; }
+
+        /* ส่วนจัดวางของเกมหลัก */
+        #game-side { width: 45%; border-right: 2px solid #333; padding-right: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+        #code-side { width: 55%; padding-left: 20px; display: flex; flex-direction: column; }
+        
+        .score-board { background: #252526; padding: 15px; border-radius: 8px; border: 1px solid #3c3c3c; box-shadow: 0 4px 8px rgba(0,0,0,0.3); display: flex; flex-column; gap: 8px; }
+        .score-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .highlight { color: #4fc1ff; font-weight: bold; font-size: 16px; }
+        .player-highlight { color: #e5c07b; font-weight: bold; font-size: 18px; }
+        .score-val { color: #2ed573; font-weight: bold; font-size: 18px; }
+
+        /* กราฟิกหอคอย */
+        .hanoi-container { display: flex; justify-content: space-around; align-items: flex-end; background: #2d2d2d; height: 180px; border-radius: 8px; padding: 20px 10px 10px 10px; border: 1px solid #3c3c3c; margin-top: 15px; }
+        .peg { width: 12px; height: 130px; background: #8e8e8e; border-radius: 6px 6px 0 0; display: flex; flex-direction: column-reverse; align-items: center; position: relative; padding-bottom: 5px; }
+        .peg::after { content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); width: 110px; height: 10px; background: #5a5a5a; border-radius: 3px; }
+        .peg-label { position: absolute; bottom: -30px; font-weight: bold; color: #aaa; width: 100%; text-align: center; }
+
+        .disk { height: 22px; border-radius: 5px; margin-bottom: 2px; box-shadow: inset 0 2px 4px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.3); transition: transform 0.3s ease; }
+        .disk-1 { width: 45px; background: #ff4757; }  
+        .disk-2 { width: 70px; background: #ffa502; }  
+        .disk-3 { width: 95px; background: #2ed573; }  
+
+        /* คำอธิบายภารกิจ */
+        .mission-box { background: #252526; padding: 15px; border-radius: 8px; border: 1px solid #3c3c3c; margin-top: 15px; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between; }
+        .mission-title { color: #ffa502; font-weight: bold; margin-bottom: 8px; font-size: 16px; }
+        .example-code { background: #111; color: #a9ffaf; padding: 8px 12px; border-radius: 4px; border-left: 4px solid #0e639c; font-family: 'Courier New', monospace; white-space: pre-wrap; font-size: 14px; margin-top: 10px; }
+
+        /* โซนพิมพ์โค้ด */
+        textarea { 
+            -webkit-user-select: text; 
+            user-select: text; 
+            width: 100%; 
+            flex-grow: 1; 
+            background: #1c1c1c; 
+            color: #fff; 
+            font-size: 16px; 
+            padding: 15px; 
+            border: 1px solid #3c3c3c; 
+            border-radius: 6px; 
+            font-family: 'Courier New', monospace; 
+            resize: none; 
+            box-sizing: border-box; 
+            line-height: 1.5;
+        }
+        #run-btn { background: #0e639c; color: white; border: none; padding: 12px 24px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-top: 15px; margin-bottom: 15px; transition: background 0.2s; }
+        #run-btn:hover { background: #1177bb; }
+        
+        .console-area { -webkit-user-select: text; user-select: text; height: 100px; background: #000; padding: 12px; border-radius: 6px; border: 1px solid #333; color: #dcdcdc; overflow-y: auto; font-family: 'Courier New', monospace; white-space: pre-wrap; }
+    </style>
+
+    <script>
+        // 🔒 ระบบป้องกันผู้เรียนแกะโค้ด
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', function(e) {
+            if (e.key === "F12" || 
+                (e.ctrlKey && e.shiftKey && ['I','i','C','c','J','j'].includes(e.key)) || 
+                (e.ctrlKey && ['U','u'].includes(e.key))) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // ⌨️ แก้ปุ่ม Tab ใน Textarea
+        function enableTabIndentation() {
+            const textarea = document.getElementById('code-input');
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    e.preventDefault(); 
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                    this.selectionStart = this.selectionEnd = start + 4;
+                }
+            });
+        }
+
+        // 🎬 ฟังก์ชันกดเริ่มเกม -> รับชื่อ -> ปิดหน้า Welcome
+        function startGameFlow() {
+            let name = prompt("🏰 กรุณากรอกชื่อของคุณเพื่อลงทะเบียนผู้พิทักษ์หอคอย:", "ผู้กล้าฝึกหัด ม.ต้น");
+            if (name == null || name.trim() === "") {
+                name = "ผู้กล้าฝึกหัด ม.ต้น";
+            }
+            document.getElementById('player-name-display').innerText = name;
+            
+            // ซ่อนหน้าต่าง Welcome ด้วยแอนิเมชันหายไป
+            const welcomeScreen = document.getElementById('welcome-screen');
+            welcomeScreen.style.opacity = '0';
+            setTimeout(() => {
+                welcomeScreen.style.display = 'none';
+            }, 500);
+        }
+    </script>
+</head>
+
+<body onload="brython(); enableTabIndentation();">
+
+    <!-- 🎬 หน้าเข้าเกมก่อนรับชื่อผู้เล่น (Welcome Screen) -->
+    <div id="welcome-screen">
+        <div class="welcome-card">
+            <h1>🏰 ยินดีต้อนรับสู่ Hanoi Code Tower</h1>
+            <p>
+                <b>เรื่องราว:</b> พลังงานกลไกของ "หอคอยแห่งฮานอย" ได้หยุดนิ่งลง! มีเพียงพลังแห่งตรรกะคอมพิวเตอร์เท่านั้นที่จะกู้ระบบคืนมาได้ วัตถุประสงค์ของคุณคือการป้อนคำสั่งควบคุมเพื่อย้ายแผ่นจานพลังงานไปยังเป้าหมายอย่างปลอดภัย<br><br>
+                <b>สิ่งที่คุณจะได้เรียนรู้และฝึกฝนในหอคอยแห่งนี้:</b><br>
+                • ชั้นที่ 1: การประกาศและใช้งาน <b>ตัวแปร (Variables)</b><br>
+                • ชั้นที่ 2: การคำนวณด้วย <b>ตัวดำเนินการ (Operators)</b><br>
+                • ชั้นที่ 3: การควบคุมเงื่อนไขกฎเหล็ก <b>(Conditions: if-else)</b><br>
+                • ชั้นที่ 4: การสั่งการวนซ้ำอัตโนมัติ <b>(Loops: while)</b><br><br>
+                *เกมนี้เปิดให้พิมพ์คำสั่งเองทั้งหมดโดยไม่มีโค้ดสำเร็จรูปให้ก๊อปปี้ จงศึกษาจากโค้ดอ้างอิงให้ถี่ถ้วน!
+            </p>
+            <button class="start-btn" onclick="startGameFlow()">🚀 เริ่มกู้ระบบหอคอย</button>
+        </div>
+    </div>
+
+    <!-- ฝั่งซ้าย: กราฟิกและภารกิจ -->
+    <div id="game-side">
+        <div>
+            <h2>🏰 Hanoi Code Tower</h2>
+            
+            <div class="score-board">
+                <div class="score-row">
+                    <div>👤 ผู้พิทักษ์หอคอย: <span id="player-name-display" class="player-highlight">กำลังโหลด...</span></div>
+                </div>
+                <div class="score-row">
+                    <div>🌟 ด่านปัจจุบัน: <span id="level-display" class="highlight">1 / 4</span></div>
+                    <div>🏆 คะแนนรวม: <span id="score-display" class="score-val">0</span> แต้ม</div>
+                </div>
+            </div>
+
+            <div class="hanoi-container">
+                <div id="peg-A" class="peg">
+                    <div id="disk-3" class="disk disk-3"></div>
+                    <div id="disk-2" class="disk disk-2"></div>
+                    <div id="disk-1" class="disk disk-1"></div>
+                    <div class="peg-label">เสา A</div>
+                </div>
+                <div id="peg-B" class="peg">
+                    <div class="peg-label">เสา B</div>
+                </div>
+                <div id="peg-C" class="peg">
+                    <div class="peg-label">เสา C</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mission-box">
+            <div>
+                <div class="mission-title" id="mission-title">กำลังโหลดภารกิจ...</div>
+                <div id="mission-desc">ระบบกำลังจัดเตรียมด่านเรียนรู้</div>
+            </div>
+            <div>
+                <b style="color: #4fc1ff; font-size: 14px;">💡 ตัวอย่างโค้ดอ้างอิง:</b>
+                <div id="code-example-box" class="example-code"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ฝั่งขวา: เครื่องมือเขียนโค้ด -->
+    <div id="code-side">
+        <h3 id="editor-title">💻 พิมพ์คำสั่ง Python ของคุณที่นี่:</h3>
+        <textarea id="code-input" spellcheck="false" placeholder="# พิมพ์โค้ดด้วยตัวเองตามตัวอย่างด้านซ้าย..."></textarea>
+        
+        <button id="run-btn">▶️ รันโค้ดและส่งตรวจคำตอบ</button>
+        
+        <h3>📥 ผลลัพธ์ (Console Output):</h3>
+        <div id="output" class="console-area"></div>
+    </div>
+
+    <!-- โครงสร้าง Logic และ Engine เกมขับเคลื่อนด้วย Python -->
+    <script type="text/python">
+        from browser import document, alert
+
+        current_level = 1
+        total_score = 0
+
+        levels_data = {
+            1: {
+                "title": "📜 ชั้นที่ 1: การกำหนดตัวแปร (Variables)",
+                "desc": "ในการย้ายจานใบแรก เราต้องสร้างตัวแปรเพื่อเก็บเสาเป้าหมาย!<br><b>ภารกิจ:</b> พิมพ์โค้ดสร้างตัวแปรชื่อ <code>target</code> แล้วกำหนดค่าให้เป็นข้อความอักษร <code>\"B\"</code> จากนั้นพิมพ์ค่าออกมาดูด้วยคำสั่ง <code>print</code>",
+                "example": "x = \"A\"\nprint(x)",
+                "editor_hint": "# ด่านที่ 1: ตัวแปร\n# จงสร้างตัวแปร target ให้มีค่าเป็น \"B\" แล้วสั่ง print ออกมา\n"
+            },
+            2: {
+                "title": "🧮 ชั้นที่ 2: ตัวดำเนินการคำนวณ (Operators)",
+                "desc": "สูตรคำนวณจำนวนครั้งที่น้อยที่สุดในการย้ายจานคือ $2^n - 1$<br><b>ภารกิจ:</b> มีจานอยู่ 3 ใบ (n = 3) จงสร้างตัวแปรชื่อ <code>moves</code> เพื่อคำนวณเลขยกกำลังโดยใช้เครื่องหมาย (<code>**</code>) แล้วสั่ง <code>print(moves)</code> ออกมา",
+                "example": "n = 2\nresult = 2**n - 1\nprint(result)",
+                "editor_hint": "# ด่านที่ 2: ตัวดำเนินการ\n# กำหนดให้ n = 3 แล้วสร้างตัวแปร moves เพื่อคำนวณสูตร 2 ยกกำลัง n ลบด้วย 1\n"
+            },
+            3: {
+                "title": "🛡️ ชั้นที่ 3: การตรวจสอบเงื่อนไข (Conditions: if-else)",
+                "desc": "กฎเหล็ก: ห้ามวางจานใหญ่ทับจานเล็ก! สมมติว่ามีจานขนาดใหญ่ (large_disk = 3) และจานขนาดเล็ก (small_disk = 1)<br><b>ภารกิจ:</b> เขียนเงื่อนไขตรวจสอบว่า ถ้า <code>large_disk > small_disk</code> ให้แสดงข้อความ <code>\"Illegal\"</code> แต่ถ้าไม่ใช่ให้แสดงข้อความ <code>\"Legal\"</code> (ใช้ปุ่ม Tab บนคีย์บอร์ดเพื่อย่นระยะเยื้องย่อหน้า)",
+                "example": "if a > b:\n    print(\"Yes\")\nelse:\n    print(\"No\")",
+                "editor_hint": "# ด่านที่ 3: การใช้เงื่อนไข (if-else)\nlarge_disk = 3\nsmall_disk = 1\n"
+            },
+            4: {
+                "title": "🌀 ชั้นที่ 4: การวนซ้ำจ่ายพลังงาน (Loops: while)",
+                "desc": "ภารกิจสุดท้าย! พลังงานกำลังจะเต็มหоคอย จงใช้ลูปวนซ้ำสั่งนับถอยหลังการจ่ายพลังงานกู้ระบบ<br><b>ภารกิจ:</b> เขียนลูป <code>while</code> ทำงานตราบใดที่ <code>energy</code> มากกว่า 0 ให้สั่งพิมพ์ค่าพลังงานออกมา และอย่าลืมลดค่าพลังงานลงทีละ 1 ในลูปด้วยเพื่อไม่ให้โปรแกรมค้าง",
+                "example": "count = 5\nwhile count > 0:\n    print(count)\n    count -= 1",
+                "editor_hint": "# ด่านที่ 4: การวนซ้ำ (while loop)\nenergy = 3\n"
+            }
+        }
+
+        def load_level(lvl):
+            if lvl <= 4:
+                data = levels_data[lvl]
+                document["level-display"].text = f"{lvl} / 4"
+                document["mission-title"].text = data["title"]
+                document["mission-desc"].innerHTML = data["desc"]
+                document["code-example-box"].text = data["example"] 
+                document["code-input"].value = data["editor_hint"] 
+            else:
+                p_name = document["player-name-display"].text
+                document["mission-title"].text = "👑 ปลดล็อกหอคอยสำเร็จ!"
+                document["mission-desc"].innerHTML = f"ยอดเยี่ยมมาก<b>คุณ {p_name}</b>! คุณผ่านครบทุกบทเรียนและปกป้องหอคอยสำเร็จ ได้คะแนนรวมทั้งสิ้น {total_score} แต้ม!"
+                document["code-example-box"].text = "# MISSION COMPLETED"
+                document["code-input"].value = f"# ยินดีด้วยคุณ {p_name} เคลียร์เกมสำเร็จแล้ว!"
+                document["run-btn"].disabled = True
+
+        def check_answer(lvl, user_output, user_code):
+            global total_score
+            if lvl == 1:
+                if user_output == "B" and "target" in user_code:
+                    document["peg-B"].attach(document["disk-1"])
+                    return True, 100
+                return False, 0
+            elif lvl == 2:
+                if user_output == "7" and "**" in user_code:
+                    document["peg-C"].attach(document["disk-2"])
+                    return True, 150
+                return False, 0
+            elif lvl == 3:
+                if user_output == "Illegal" and "if" in user_code and "else" in user_code:
+                    document["peg-C"].attach(document["disk-1"])
+                    return True, 200
+                return False, 0
+            elif lvl == 4:
+                lines = user_output.split()
+                if lines == ["3", "2", "1"] and "while" in user_code:
+                    document["peg-C"].attach(document["disk-3"])
+                    document["peg-C"].attach(document["disk-2"])
+                    document["peg-C"].attach(document["disk-1"])
+                    return True, 300
+                return False, 0
+            return False, 0
+
+        def on_run_click(ev):
+            global current_level, total_score
+            document["output"].text = ""
+            raw_code = document["code-input"].value
+            import sys
+            from io import StringIO
+            old_stdout = sys.stdout
+            sys.stdout = mystdout = StringIO()
+            try:
+                exec(raw_code, {})
+                sys.stdout = old_stdout
+                output_res = mystdout.getvalue().strip()
+                document["output"].text = output_res
+                is_correct, points = check_answer(current_level, output_res, raw_code)
+                if is_correct:
+                    total_score += points
+                    document["score-display"].text = str(total_score)
+                    alert(f"🎉 ถูกต้อง! สำเร็จภารกิจด่านที่ {current_level}\nคุณได้รับ +{points} แต้ม!")
+                    current_level += 1
+                    load_level(current_level)
+                else:
+                    alert("❌ ผลลัพธ์คำตอบหรือโครงสร้างโค้ดยังไม่ตรงตามเงื่อนไขโจทย์ ลองดูตัวอย่างและคำใบ้อีกครั้งนะครับ")
+            except Exception as e:
+                sys.stdout = old_stdout
+                document["output"].text = f"🚨 Python Syntax Error:\n{str(e)}"
+
+        document["run-btn"].bind("click", on_run_click)
+        load_level(current_level)
+    </script>
+
+</body>
+</html>
