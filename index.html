@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Hanoi Code Tower - ม.ต้น เรียน Python ผ่านเกม (🔒 Sandbox)</title>
+    <title>Hanoi Code Tower - เรียน Python ผ่านเกม (🔒 Sandbox)</title>
     <!-- โหลด Brython สำหรับรัน Python บน Web Browser -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.10.5/brython.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.10.5/brython_stdlib.js"></script>
@@ -126,9 +126,9 @@
 
         // 🎬 ฟังก์ชันกดเริ่มเกม -> รับชื่อ -> ปิดหน้า Welcome
         function startGameFlow() {
-            let name = prompt("🏰 กรุณากรอกชื่อของคุณเพื่อลงทะเบียนผู้พิทักษ์หอคอย:", "ผู้กล้าฝึกหัด ม.ต้น");
+            let name = prompt("🏰 กรุณากรอกชื่อของคุณเพื่อลงทะเบียนผู้พิทักษ์หอคอย:", "ผู้กล้าฝึกหัด");
             if (name == null || name.trim() === "") {
-                name = "ผู้กล้าฝึกหัด ม.ต้น";
+                name = "ผู้กล้าฝึกหัด";
             }
             document.getElementById('player-name-display').innerText = name;
             
